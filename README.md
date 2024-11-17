@@ -1,2 +1,195 @@
 # KazuHUB
-This script can unlocks free ability and it is fe without bans, use this before it got patch!
+local localPlayer = game.Players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local abilitiesFolder = character:WaitForChild("Abilities")
+
+local ChosenAbility = "Raging Deflection"
+
+local function rainbowEffect(object, property)
+    -- Animates the `property` of `object` with a rainbow color
+    while task.wait(0.1) do
+        for hue = 0, 1, 0.01 do
+            object[property] = Color3.fromHSV(hue, 1, 1)
+            task.wait(0.05)
+        end
+    end
+end
+
+local function zoomInAnimation(frame)
+    frame.Size = UDim2.new(0, 0, 0, 0)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+    local targetSize = UDim2.new(0, 200, 0, 250)
+    local targetPosition = UDim2.new(0.5, -100, 0.5, -125)
+
+    for i = 0, 1, 0.05 do
+        frame.Size = UDim2.new(targetSize.X.Scale * i, targetSize.X.Offset * i, targetSize.Y.Scale * i, targetSize.Y.Offset * i)
+        frame.Position = UDim2.new(targetPosition.X.Scale, targetPosition.X.Offset * i, targetPosition.Y.Scale, targetPosition.Y.Offset * i)
+        task.wait(0.03)
+    end
+
+    frame.Size = targetSize
+    frame.Position = targetPosition
+end
+
+local function makeMovable(guiElement)
+    local dragging = false
+    local dragStart
+    local startPos
+
+    guiElement.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiElement.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    guiElement.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                local delta = input.Position - dragStart
+                guiElement.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+end
+
+local function createGUI()
+    -- Create main ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AbilityChooser"
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    -- Create Header Text
+    local headerText = Instance.new("TextLabel")
+    headerText.Size = UDim2.new(0, 400, 0, 40) -- Increased height for better readability
+    headerText.Position = UDim2.new(0.5, -200, 0, 10)
+    headerText.Text = "This script made by kazurbx"
+    headerText.TextSize = 20 -- Bigger text size
+    headerText.TextColor3 = Color3.new(1, 1, 1) -- Default color
+    headerText.Font = Enum.Font.SourceSansBold
+    headerText.BackgroundTransparency = 1
+    headerText.TextStrokeColor3 = Color3.new(0, 0, 0) -- Black stroke for visibility
+    headerText.TextStrokeTransparency = 0
+    headerText.TextScaled = false
+    headerText.Parent = screenGui
+
+    -- Animate Header Text Color (Rainbow)
+    task.spawn(function()
+        rainbowEffect(headerText, "TextColor3")
+    end)
+
+    -- Create Toggle Button
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Size = UDim2.new(0, 100, 0, 30)
+    toggleButton.Position = UDim2.new(0, 10, 0, 10)
+    toggleButton.Text = "Toggle GUI"
+    toggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Parent = screenGui
+
+    -- Create Main Frame
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 250)
+    frame.Position = UDim2.new(0.5, -100, 0.5, -125)
+    frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    frame.BorderSizePixel = 0
+    frame.Visible = true
+    frame.Parent = screenGui
+
+    -- Add Stroke to Frame
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Thickness = 4
+    uiStroke.Parent = frame
+
+    -- Animate Stroke Color
+    task.spawn(function()
+        rainbowEffect(uiStroke, "Color")
+    end)
+
+    -- Apply Animation
+    task.spawn(function()
+        zoomInAnimation(frame)
+        rainbowEffect(frame, "BackgroundColor3")
+    end)
+
+    -- Scrollable Frame
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Size = UDim2.new(1, 0, 1, 0)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.ScrollBarThickness = 8
+    scrollFrame.BackgroundColor3 = Color3.new(0.25, 0.25, 0.25)
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.Parent = frame
+
+    -- Adjust Scroll Frame Canvas Size Dynamically
+    local totalHeight = 0
+    local buttonHeight = 20
+    local padding = 5
+
+    local abilities = {"Dash", "Forcefield", "Invisibility", "Platform", "Raging Deflection", "Shadow Step", 
+        "Super Jump", "Telekinesis", "Thunder Dash", "Infinity", "Dragon Spirit", "Time Hole", 
+        "Dribble", "Tact", "Serpent Shadow Clone", "Slash of Duality", "Force", "Phase Bypass", "Quasar", "Encrypted Clone", "Calming Deflection", "Pull", "Phantom", "Hell Hook", "Singurality", "Bunny Leap", "Slashes of Fury", "Necromancer", "Waypoint", "Chieftain's Totem"}
+
+    for i, ability in ipairs(abilities) do
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(1, -10, 0, buttonHeight)
+        button.Position = UDim2.new(0, 5, 0, totalHeight + padding)
+        button.Text = ability
+        button.BackgroundColor3 = Color3.new(0.8, 0.8, 0.8)
+        button.BorderColor3 = Color3.new(1, 1, 1)
+        button.Parent = scrollFrame
+
+        totalHeight = totalHeight + buttonHeight + padding
+
+        button.MouseButton1Click:Connect(function()
+            ChosenAbility = ability
+        end)
+    end
+
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+
+    -- Toggle GUI Visibility
+    toggleButton.MouseButton1Click:Connect(function()
+        frame.Visible = not frame.Visible
+    end)
+
+    -- Make Frame Movable
+    makeMovable(frame)
+end
+
+-- Handle Character Reset
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    abilitiesFolder = character:WaitForChild("Abilities")
+    createGUI()
+end
+
+localPlayer.CharacterAdded:Connect(onCharacterAdded)
+createGUI()
+
+-- Ability Toggle Logic
+while task.wait() do
+    for _, obj in pairs(abilitiesFolder:GetChildren()) do
+        if obj:IsA("LocalScript") then
+            if obj.Name == ChosenAbility then
+                obj.Disabled = false
+            else
+                obj.Disabled = true
+            end
+        end
+    end
+end
+
